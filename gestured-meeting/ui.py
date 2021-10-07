@@ -113,7 +113,7 @@ class UI:
 
     def __is__checked__gesture(self, gesture_key: GestureKey):
         def inner(_):
-            self.__gesture == gesture_key
+            return self.__gesture == gesture_key
 
         return inner
 
