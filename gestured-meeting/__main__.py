@@ -99,7 +99,8 @@ class GesturedMeeting:
         await self.__gesture.run()
 
     async def __stop(self):
-        await self.__gesture.stop()
+        if self.__gesture.running:
+            await self.__gesture.stop()
 
     async def __run_async(self):
         try:
