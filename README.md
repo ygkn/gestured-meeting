@@ -1,4 +1,4 @@
-<h1><img src="./logo.svg" alt="Gestured Meeting"></h1>
+<h1><center><img src="./logo.svg" alt="Gestured Meeting"></center></h1>
 
 <center>
 Online meeting with gesture.
