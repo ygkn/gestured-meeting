@@ -3,22 +3,15 @@ import asyncio
 from bleak import BleakClient, BleakScanner
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
+from event import Event
 
-from .base import (
-    Gesture,
-    GestureEvent,
-    GestureEventHandler,
-    ObservationChangedEventHandler,
-)
+from .base import Gesture, GestureType
 
 name = "gestured meeting"
 characteristic_uuid = "1b2ffc7b-ba3d-4577-9c5e-ed01287faaf3"
 
 
 class BLEGesture(Gesture):
-    __gesture_handlers: set[GestureEventHandler]
-    __observation_changed_handlers: set[ObservationChangedEventHandler]
-
     __clients: set[BleakClient]
     __scanner: BleakScanner
 
@@ -29,8 +22,8 @@ class BLEGesture(Gesture):
 
         self.__clients = set()
 
-        self.__gesture_handlers = set()
-        self.__observation_changed_handlers = set()
+        self.gestured_event = Event()
+        self.observation_changed_event = Event()
 
         self.__scanner = BleakScanner()
 
@@ -48,26 +41,17 @@ class BLEGesture(Gesture):
             )
             self.__clients.add(client)
 
-            for handler in self.__observation_changed_handlers:
-                handler(len(self.__clients) != 0)
+            self.observation_changed_event.emit(len(self.__clients) != 0)
 
     def __disconnected_callback(self, client: BleakClient):
         self.__clients.discard(client)
 
-        for handler in self.__observation_changed_handlers:
-            handler(len(self.__clients) != 0)
+        self.observation_changed_event.emit(len(self.__clients) != 0)
 
     def __notification_callback(self, _: int, data: bytearray):
         message = data.decode(encoding="utf-8")
-        if message in GestureEvent.__members__:
-            for handler in self.__gesture_handlers:
-                handler(GestureEvent[message])
-
-    def on_gestured(self, handler: GestureEventHandler):
-        self.__gesture_handlers.add(handler)
-
-    def on_observation_changed(self, handler: ObservationChangedEventHandler):
-        self.__observation_changed_handlers.add(handler)
+        if message in GestureType.__members__:
+            self.gestured_event.emit(GestureType[message])
 
     async def run(self):
         await self.__scanner.start()

@@ -1,9 +1,11 @@
 import asyncio
+from asyncio import exceptions
 import threading
+from typing import Tuple
 
 from arg import parse_args
 from gesture import GestureKey, gestures
-from gesture.base import Gesture, GestureEvent
+from gesture.base import Gesture, GestureType
 from meeting import MeetingKey, meetings
 from meeting.base import Meeting
 from ui import UI
@@ -16,8 +18,6 @@ class GesturedMeeting:
     __meeting: Meeting
     __watching: bool
     __ui: UI
-
-    __exit_event: asyncio.Event
 
     def __init__(self):
 
@@ -37,97 +37,107 @@ class GesturedMeeting:
             watching=self.__watching,
         )
 
-        self.__gesture.on_gestured(self.__on_gestured)
-        self.__gesture.on_observation_changed(self.__on_observation_changed)
+    async def __listen_gestured(self):
+        while True:
+            gesture_type = await self.__gesture.gestured_event.listen()
 
-        self.__ui.on_change_gesture(self.__on_change_gesture)
-        self.__ui.on_change_meeting(self.__on_change_meeting)
-        self.__ui.on_change_watching(self.__on_change_watching)
-        self.__ui.on_exit(self.__on_exit)
+            if gesture_type == GestureType.toggle_hand:
+                self.__meeting.toggle_hand()
 
-    def __on_gestured(self, event: GestureEvent):
-        if event == GestureEvent.toggle_hand:
-            self.__meeting.toggle_hand()
+            if gesture_type == GestureType.leave_comfirm:
+                self.__meeting.leave_meeting()
 
-        if event == GestureEvent.leave_comfirm:
-            self.__meeting.leave_meeting()
+    async def __listen_observation_changed(self):
+        while True:
+            observation = (
+                await self.__gesture.observation_changed_event.listen()
+            )
+            self.__ui.set_loading(not observation)
 
-    def __on_observation_changed(self, observation: bool):
-        self.__ui.set_loading(not observation)
+    async def __listen_change_gesture(self):
+        while True:
+            gesture_key = await self.__ui.change_gesture_event.listen()
 
-    def __on_change_gesture(self, gesture_key: GestureKey):
-        old_gesture = self.__gesture
+            if gesture_key == self.__gesture_key:
+                continue
 
-        self.__gesture_key = gesture_key
-        self.__gesture = gestures[self.__gesture_key]()
+            old_gesture = self.__gesture
 
-        if old_gesture is not None and old_gesture.running:
+            self.__gesture_key = gesture_key
+            self.__gesture = gestures[self.__gesture_key]()
 
-            async def stop_and_run():
-                await old_gesture.stop()
+            if old_gesture is not None and old_gesture.running:
+
+                await asyncio.gather(old_gesture.stop(), self.__gesture.run())
+
+    async def __listen_change_meeting(self):
+        while True:
+            meeting_key = await self.__ui.change_meeting_event.listen()
+
+            if meeting_key == self.__meeting:
+                continue
+
+            self.__meeting_key = meeting_key
+            self.__meeting = meetings[self.__meeting_key]()
+
+    async def __listen_change_watching(self):
+        while True:
+            watching = await self.__ui.change_watching_event.listen()
+
+            if watching == self.__watching:
+                continue
+
+            self.__watching = watching
+
+            if watching:
                 await self.__gesture.run()
+                self.__ui.set_loading(True)
 
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(stop_and_run())
-
-    def __on_change_meeting(self, meeting_key: MeetingKey):
-        self.__meeting_key = meeting_key
-        self.__meeting = meetings[self.__meeting_key]()
-
-    def __on_change_watching(self, watching: bool):
-        self.__watching = watching
-
-        if watching and not self.__gesture.running:
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(self.__gesture.run())
-
-        if not watching and self.__gesture.running:
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(self.__gesture.stop())
-
-    def __on_exit(self):
-        self.__exit_event.set()
-        self.__stop_ui()
+            if not watching:
+                self.__ui.set_loading(False)
+                await self.__gesture.stop()
 
     async def __run(self):
-        self.__exit_event = asyncio.Event()
-
         await self.__gesture.run()
 
     async def __stop(self):
         await self.__gesture.stop()
 
-    async def __wait_for_exit(self):
-        await self.__exit_event.wait()
-
-    async def __run_to_exit(self):
-        await self.__run()
-        await self.__wait_for_exit()
-        await self.__stop()
-
-    def __run_ui(self):
-        self.__ui.run()
-
-    def __stop_ui(self):
-        self.__ui.stop()
-
-    def __thread(self):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
+    async def __run_async(self):
         try:
-            loop.run_until_complete(self.__run_to_exit())
+            _, pending = await asyncio.wait(
+                (
+                    asyncio.gather(
+                        self.__run(),
+                        self.__listen_gestured(),
+                        self.__listen_observation_changed(),
+                        self.__listen_change_gesture(),
+                        self.__listen_change_meeting(),
+                        self.__listen_change_watching(),
+                    ),
+                    asyncio.create_task(self.__ui.exit_event.listen()),
+                ),
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            for task in pending:
+                task.cancel()
+            try:
+                await asyncio.wait(pending)
+            except asyncio.exceptions.CancelledError:
+                pass
+            finally:
+                self.__ui.stop()
         except KeyboardInterrupt:
-            loop.run_until_complete(self.__stop())
-
+            pass
         finally:
-            loop.close()
+            await self.__stop()
 
     def run(self):
-        thread = threading.Thread(target=self.__thread)
+        thread = threading.Thread(
+            target=asyncio.run, args=(self.__run_async(),)
+        )
         thread.start()
-
-        self.__run_ui()
+        self.__ui.run()
 
 
 if __name__ == "__main__":

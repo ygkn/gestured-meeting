@@ -1,5 +1,4 @@
-from collections.abc import Callable
-
+from event import Event
 from gesture import GestureKey
 from meeting import MeetingKey
 from PIL import Image
@@ -20,10 +19,10 @@ def constTree(_):
 
 
 class UI:
-    __exit_handlers: set[Callable[[], None]]
-    __change_gesture_handlers: set[Callable[[GestureKey], None]]
-    __change_meeting_handlers: set[Callable[[MeetingKey], None]]
-    __change_watching_handlers: set[Callable[[bool], None]]
+    exit_event: Event[None]
+    change_gesture_event: Event[GestureKey]
+    change_meeting_event: Event[MeetingKey]
+    change_watching_event: Event[bool]
 
     __gesture: GestureKey
     __meeting: MeetingKey
@@ -34,11 +33,11 @@ class UI:
     def __init__(
         self, gesture: GestureKey, meeting: MeetingKey, watching: bool
     ):
-        self.__exit_handlers = set()
+        self.exit_event = Event()
 
-        self.__change_gesture_handlers = set()
-        self.__change_meeting_handlers = set()
-        self.__change_watching_handlers = set()
+        self.change_gesture_event = Event()
+        self.change_meeting_event = Event()
+        self.change_watching_event = Event()
 
         self.__gesture = gesture
         self.__meeting = meeting
@@ -54,7 +53,6 @@ class UI:
                     "Watching",
                     self.__handle_change_watching,
                     checked=self.__is_checked_watching,
-                    radio=True,
                 ),
                 MenuItem(
                     "Gesture Provider",
@@ -88,26 +86,18 @@ class UI:
             ),
         )
 
-    def on_change_watching(self, handler: Callable[[bool], None]) -> None:
-        self.__change_watching_handlers.add(handler)
-
     def __handle_change_watching(self, _, item):
         new_watching = not item.checked
         self.__watching = new_watching
-        for handler in self.__change_watching_handlers:
-            handler(new_watching)
+        self.change_watching_event.emit(new_watching)
 
     def __is_checked_watching(self, _):
         return self.__watching
 
-    def on_change_gesture(self, handler: Callable[[GestureKey], None]) -> None:
-        self.__change_gesture_handlers.add(handler)
-
     def __handle_change_gesture(self, gesture_key: GestureKey):
         def inner():
             self.__gesture = gesture_key
-            for handler in self.__change_gesture_handlers:
-                handler(gesture_key)
+            self.change_gesture_event(gesture_key)
 
         return inner
 
@@ -117,14 +107,10 @@ class UI:
 
         return inner
 
-    def on_change_meeting(self, handler: Callable[[MeetingKey], None]) -> None:
-        self.__change_meeting_handlers.add(handler)
-
     def __handle_change_meeting(self, meeting_key: MeetingKey):
         def inner(_):
             self.__meeting = meeting_key
-            for handler in self.__change_meeting_handlers:
-                handler(meeting_key)
+            self.change_meeting_event.emit(meeting_key)
 
         return inner
 
@@ -135,11 +121,7 @@ class UI:
         return inner
 
     def __handle_click_exit(self):
-        for handler in self.__exit_handlers:
-            handler()
-
-    def on_exit(self, handler: Callable[[], None]) -> None:
-        self.__exit_handlers.add(handler)
+        self.exit_event.emit(None)
 
     def set_loading(self, loading: bool):
         if loading:
