@@ -7,7 +7,7 @@ from bleak.backends.scanner import AdvertisementData
 from .base import (Gesture, GestureEvent, GestureEventHandler,
                    ObservationChangedEventHandler)
 
-name = "esp32"
+name = "gestured meeting"
 characteristic_uuid = "1b2ffc7b-ba3d-4577-9c5e-ed01287faaf3"
 
 
