@@ -1,7 +1,5 @@
 import asyncio
-from asyncio import exceptions
 import threading
-from typing import Tuple
 
 from arg import parse_args
 from gesture import GestureKey, gestures
