@@ -26,4 +26,6 @@ class Event(Generic[V]):
 
         asyncio_event.clear()
 
+        self.__asyncio_events.discard(asyncio_event)
+
         return self.__value
