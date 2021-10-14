@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gestured_meeting"
-version = "0.1.0"
+version = "0.1.4"
 description = "Online meeting with gesture."
 authors = ["ygkn <2000ygkn0713@gmail.com>"]
 license = "MIT"
