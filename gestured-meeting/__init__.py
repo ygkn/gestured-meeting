@@ -17,17 +17,16 @@ class GesturedMeeting:
     __watching: bool
     __ui: UI
 
-    def __init__(self):
+    def __init__(
+        self, gesture_key: GestureKey, meeting_key: MeetingKey, watching: bool
+    ):
+        self.__gesture_key = gesture_key
+        self.__gesture = gestures[gesture_key]()
 
-        args = parse_args()
+        self.__meeting_key = meeting_key
+        self.__meeting = meetings[meeting_key]()
 
-        self.__gesture_key = GestureKey[args.gesture]
-        self.__gesture = gestures[self.__gesture_key]()
-
-        self.__meeting_key = MeetingKey[args.meeting]
-        self.__meeting = meetings[self.__meeting_key]()
-
-        self.__watching = args.run
+        self.__watching = watching
 
         self.__ui = UI(
             gesture=self.__gesture_key,
@@ -139,6 +138,15 @@ class GesturedMeeting:
         self.__ui.run()
 
 
-if __name__ == "__main__":
-    gestured_meeting = GesturedMeeting()
+def cli():
+    args = parse_args()
+
+    gesture_key = GestureKey[args.gesture]
+    meeting_key = MeetingKey[args.meeting]
+    watching = args.run
+
+    gestured_meeting = GesturedMeeting(
+        gesture_key=gesture_key, meeting_key=meeting_key, watching=watching
+    )
+
     gestured_meeting.run()
