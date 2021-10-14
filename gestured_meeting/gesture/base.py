@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from enum import Enum, auto
 
-from event import Event
+from ..event import Event
 
 
 class GestureType(Enum):

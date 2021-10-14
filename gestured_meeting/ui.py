@@ -1,8 +1,9 @@
-from event import Event
-from gesture import GestureKey
-from meeting import MeetingKey
 from PIL import Image
 from pystray import Icon, Menu, MenuItem
+
+from .event import Event
+from .gesture import GestureKey
+from .meeting import MeetingKey
 
 icons = {
     "default": Image.open("icons/default.png"),

@@ -1,7 +1,7 @@
 from argparse import ArgumentParser, BooleanOptionalAction
 
-from gesture import GestureKey
-from meeting import MeetingKey
+from .gesture import GestureKey
+from .meeting import MeetingKey
 
 description = "Online meeting with gesture."
 

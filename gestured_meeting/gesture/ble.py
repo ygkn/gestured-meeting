@@ -3,8 +3,8 @@ import asyncio
 from bleak import BleakClient, BleakScanner
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
-from event import Event
 
+from ..event import Event
 from .base import Gesture, GestureType
 
 name = "gestured meeting"

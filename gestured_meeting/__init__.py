@@ -1,12 +1,12 @@
 import asyncio
 import threading
 
-from arg import parse_args
-from gesture import GestureKey, gestures
-from gesture.base import Gesture, GestureType
-from meeting import MeetingKey, meetings
-from meeting.base import Meeting
-from ui import UI
+from .arg import parse_args
+from .gesture import GestureKey, gestures
+from .gesture.base import Gesture, GestureType
+from .meeting import MeetingKey, meetings
+from .meeting.base import Meeting
+from .ui import UI
 
 
 class GesturedMeeting:
