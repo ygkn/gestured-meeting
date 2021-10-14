@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from PIL import Image
 from pystray import Icon, Menu, MenuItem
 
@@ -6,8 +8,12 @@ from .gesture import GestureKey
 from .meeting import MeetingKey
 
 icons = {
-    "default": Image.open("icons/default.png"),
-    "loading": Image.open("icons/loading.png"),
+    "default": Image.open(
+        Path(__file__, "..", "icons", "default.png").resolve()
+    ),
+    "loading": Image.open(
+        Path(__file__, "..", "icons", "loading.png").resolve()
+    ),
 }
 
 
