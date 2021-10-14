@@ -16,7 +16,7 @@ Logo and icons are remixed [Heroicons](https://heroicons.com/) and [Twemoji](htt
 
 #### Tested
 
-- Ubuntu 20.04 (tested)
+- Ubuntu 20.04
 
 ### Untested
 
