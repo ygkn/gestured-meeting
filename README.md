@@ -12,6 +12,14 @@ Logo and icons are remixed [Heroicons](https://heroicons.com/) and [Twemoji](htt
 
 - Python ^3.9
 
+#### Ubuntu / Debian
+
+```
+sudo apt install libgirepository1.0-dev gcc libcairo2-dev pkg-config python3-dev gir1.2-gtk-3.0 gir1.2-appindicator3-0.1
+```
+
+See [Getting Started — PyGObject](https://pygobject.readthedocs.io/en/latest/getting_started.html), [techgaun/nepali-calendar-indicator#5](https://github.com/techgaun/nepali-calendar-indicator/issues/5)
+
 ### Supported OS
 
 #### Tested
