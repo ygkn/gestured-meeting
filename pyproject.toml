@@ -12,7 +12,7 @@ PyAutoGUI = "^0.9.53"
 bleak = "^0.12.1"
 pystray = "^0.17.3"
 Pillow = "^8.3.2"
-PyGObject = "^3.42.0"
+PyGObject = {version= "^3.42.0", markers = "platform_system == 'Linux'"}
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.910"
